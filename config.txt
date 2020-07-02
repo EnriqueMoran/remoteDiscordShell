@@ -7,7 +7,7 @@
 
 # Version - This parameter is automatically filled. Current version will be shown on /help
 # option. Please do not modify.
-version = v0.0.1
+version = v0.0.2
 
 
 # TOKEN - This is bot auth token, necessary to connect bot to Discord device.

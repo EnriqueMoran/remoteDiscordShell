@@ -9,7 +9,7 @@ import discord
 
 __author__ = "EnriqueMoran"
 
-__version__ = "v0.0.1"
+__version__ = "v0.0.2"
 
 
 TOKEN = None
@@ -23,6 +23,10 @@ LOGLIMIT = None    # Max number of lines to register in log
 GUILD = None    # Server's name
 INGUILD = False    # Is this bot running in configured server?
 USERSLOGIN = []    # List of users id waiting for pass to be added
+USERSUPDATE = []   # List of users id waiting to update system's response
+USERSUPGRADE = []   # List of users id waiting to upgrade system's response
+USERSINSTALL = []   # List of users id waiting to install a package
+USERSUNINSTALL = []   # List of users id waiting to uninstall a package
 FORBIDDENCOMMANDS = [
     "wait", "exit", "clear", "aptitude", "raspi-config",
     "nano", "dc", "htop", "ex", "expand", "vim", "man", "apt-get", "poweroff",
@@ -154,6 +158,89 @@ def check_user_login(login):    # Check if user ID is on users.txt
     return check
 
 
+async def updateSystem(message):
+    try:
+        proc = subprocess.Popen('sudo apt-get update -y', shell=True,
+                                stdin=None, stdout=subprocess.PIPE,
+                                executable="/bin/bash")
+        while True:
+            output = proc.stdout.readline()
+            if output == b'' and proc.poll() is not None:
+                break
+            if output:
+                await message.channel.send(output.decode('utf-8'))
+        proc.wait()
+
+        if proc.poll() == 0:
+            await message.channel.send("System updated sucessfully.")
+        else:
+            await message.channel.send("System not updated" +
+                                       ", error code: " + str(proc.poll()))
+    except Exception as e:
+        error = "Error ocurred: " + str(e)
+        errorType = "Error type: " + str((e.__class__.__name__))
+        await message.channel.send(str(error))
+        await message.channel.send(str(errorType))
+
+
+async def upgradeSystem(message):
+    try:
+        proc = subprocess.Popen('sudo apt-get upgrade -y', shell=True,
+                                stdin=None, stdout=subprocess.PIPE,
+                                executable="/bin/bash")
+        while True:
+            output = proc.stdout.readline()
+            if output == b'' and proc.poll() is not None:
+                break
+            if output:
+                await message.channel.send(output.decode('utf-8'))
+        proc.wait()
+
+        if proc.poll() == 0:
+            await message.channel.send("System upgraded sucessfully.")
+        else:
+            await message.channel.send("System not upgraded" +
+                                       ", error code: " + str(proc.poll()))
+    except Exception as e:
+        error = "Error ocurred: " + str(e)
+        errorType = "Error type: " + str((e.__class__.__name__))
+        await message.channel.send(str(error))
+        await message.channel.send(str(errorType))
+
+
+async def installPackage(message):
+    try:
+        proc = subprocess.Popen('sudo apt-get install -y ' + message.content,
+                                shell=True, stdin=None,
+                                stdout=subprocess.PIPE, executable="/bin/bash")
+        already_installed = False
+
+        while True:
+            output = proc.stdout.readline()
+            already_installed = (already_installed or
+                                 "0 newly installed" in str(output))
+            if output == b'' and proc.poll() is not None:
+                break
+            if output:
+                await message.channel.send(output.decode('utf-8'))
+        proc.wait()
+
+        if already_installed:
+                    return    # Dont send any message
+        if proc.poll() == 0:
+            await message.channel.send(f"Package {message.content} " +
+                                       "sucessfully installed.")
+        else:
+            await message.channel.send(f"Package {message.content} " +
+                                       "not installed. Error code: " +
+                                       str(proc.poll()))
+    except Exception as e:
+        error = "Error ocurred: " + str(e)
+        errorType = "Error type: " + str((e.__class__.__name__))
+        await message.channel.send(str(error))
+        await message.channel.send(str(errorType))
+
+
 @client.event
 async def on_ready():
     global TOKEN, GUILD, INGUILD
@@ -168,7 +255,8 @@ async def on_ready():
 @in_guild
 @client.event
 async def on_message(message):
-    global USERSLOGIN, VERSION, FORBIDDENCOMMANDS, ROOT
+    global USERSLOGIN, VERSION, FORBIDDENCOMMANDS, ROOT, USERSUPDATE, \
+        USERSUPGRADE, USERSINSTALL, USERSUNINSTALL
     if message.author == client.user:
         return
     if message.author.id in USERSLOGIN:    # User must add password to access
@@ -178,14 +266,63 @@ async def on_message(message):
             response = "Logged in, you can use commands now."
             await message.author.dm_channel.send(response)
             return
+    if message.author.id in USERSUPDATE:
+        # User must reply wether update system or not
+        if message.content.lower() == 'yes':
+            USERSUPDATE.remove(message.author.id)
+            response = "System updating..."
+            await message.channel.send(response)
+            await updateSystem(message)
+        elif message.content.lower() == 'no':
+            USERSUPDATE.remove(message.author.id)
+            response = "System won't update."
+            await message.channel.send(response)
+        else:
+            response = "Please reply 'yes' or 'no'."
+            await message.channel.send(response)
+        return
+    if message.author.id in USERSUPGRADE:
+        # User must reply wether upgrade system or not
+        if message.content.lower() == 'yes':
+            USERSUPGRADE.remove(message.author.id)
+            response = "System upgrading..."
+            await message.channel.send(response)
+            await upgradeSystem(message)
+        elif message.content.lower() == 'no':
+            USERSUPGRADE.remove(message.author.id)
+            response = "System won't upgrade."
+            await message.channel.send(response)
+        else:
+            response = "Please reply 'yes' or 'no'."
+            await message.channel.send(response)
+        return
     if not check_user_login(message.author.id):
         USERSLOGIN.append(message.author.id)  # Waiting for pass to be written
         await message.author.create_dm()
         response = "Please log in, insert password:"
         await message.author.dm_channel.send(response)
+        return
+    if message.author.id in USERSINSTALL:
+        # User must reply which package to install
+        if message.content.lower() == 'cancel':
+            USERSINSTALL.remove(message.author.id)
+            response = "No package will be installed."
+            await message.channel.send(response)
+        else:
+            USERSINSTALL.remove(message.author.id)
+            response = "Trying to install package..."
+            await message.channel.send(response)
+            await installPackage(message)
+        return
+    if not check_user_login(message.author.id):
+        USERSLOGIN.append(message.author.id)  # Waiting for pass to be written
+        await message.author.create_dm()
+        response = "Please log in, insert password:"
+        await message.author.dm_channel.send(response)
+        return
     else:
         if message.content.lower() == '/start':    # TODO: TMP welcome message
-            welcome_one = "Welcome to telegramShell, this bot allows " + \
+            welcome_one = "Welcome to discordShell, this bot allows " + \
                           "you to remotely control a computer terminal."
             welcome_two = "List of avaliable commands: \n- To " + \
                 "install packages use /install \n- To update system " + \
@@ -199,11 +336,15 @@ async def on_message(message):
             await message.channel.send(welcome_two)
             await message.channel.send(welcome_three)
         elif message.content.lower() == '/update':    # Update system
-            pass    # TODO
+            await message.channel.send("Update system? (Write yes/no): ")
+            USERSUPDATE.append(message.author.id)  # Waiting for response
         elif message.content.lower() == '/upgrade':    # Upgrade system
-            pass    # TODO
+            await message.channel.send("Upgrade system? (Write yes/no): ")
+            USERSUPGRADE.append(message.author.id)  # Waiting for response
         elif message.content.lower() == '/install':    # Install package
-            pass    # TODO
+            await message.channel.send("Write package name to install or " +
+                                       "'cancel' to exit: ")
+            USERSINSTALL.append(message.author.id)  # Waiting for response
         elif message.content.lower() == '/uninstall':    # Remove package
             pass    # TODO
         elif message.content.lower() == '/forbidden':    # Forbidden commands
@@ -275,6 +416,7 @@ async def on_message(message):
                 except Exception as e:
                     error = "Error: Command not found"
                     await message.channel.send(error)
+    return
 
 
 if __name__ == "__main__":
