@@ -1,5 +1,5 @@
-# remoteTelegramShell
-remoteTelegramShell is a secure remote shell for Linux that makes use of Telegram's conection to send commands and receive messages from the computer. It has an user login system and root restriction in order to avoid malicious connections from other Telegram users. _"pyTelegramBotApi"_ module is needed. This tool is specially useful if you want to connect to a computer that is behind a private network without opening ports or just want to control your computer through Telegram, without using any other ssh client.
+# remoteDiscordShell
+remoteDiscordShell is a secure remote shell for Linux that makes use of Discord's conection to send commands and receive messages from the computer. It has an user login system and root restriction in order to avoid malicious connections from other Discord users. _"discord"_ module is needed. This tool is specially useful if you want to connect to a computer that is behind a private network without opening ports or just want to control your computer through Discord, without using any other ssh client.
 
 It also has a log file for tracking users input, that registers the date, command and user ID.
 
