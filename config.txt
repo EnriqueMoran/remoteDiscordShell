@@ -7,7 +7,7 @@
 
 # Version - This parameter is automatically filled. Current version will be shown on /help
 # option. Please do not modify.
-version = v0.0.2
+version = v0.0.3
 
 
 # TOKEN - This is bot auth token, necessary to connect bot to Discord device.
@@ -17,6 +17,7 @@ token =
 # GUILD name - Server's name. If you modify your server's name, the change must be done
 # in this file too.
 guildName = 
+
 
 # Password - New users will need to use it in order to access to the service. Logged users
 # ID will be stored in users.txt. If there are users stored and you want to change the

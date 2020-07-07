@@ -262,16 +262,16 @@ async def installPackage(message):
 
 async def removePackage(message):
     try:
-        proc = subprocess.Popen('sudo apt-get --purge remove -y ' + 
+        proc = subprocess.Popen('sudo apt-get --purge remove -y ' +
                                 message.content, shell=True, stdin=None,
-                                stdout=subprocess.PIPE, 
+                                stdout=subprocess.PIPE,
                                 executable="/bin/bash")
         already_removed = False
 
         while True:
             output = proc.stdout.readline()
             already_removed = (already_removed or
-                                 "0 to remove" in str(output))
+                               "0 to remove" in str(output))
             if output == b'' and proc.poll() is not None:
                 break
             if output:
@@ -305,13 +305,14 @@ async def show_help(message):
     global VERSION
     message_one = "Current version: " + VERSION
     message_two = "Welcome to remoteDiscordShell, this bot allows users " + \
-    "to remotely control a computer terminal. Current commands: "
+        "to remotely control a computer terminal. Current commands: "
     await message.channel.send(message_one)
     await message.channel.send(message_two)
     res = ""
     for element in AVALIABLECOMMANDS:
         res += element + ", "
-    await message.channel.send(res[:-2]) 
+    await message.channel.send(res[:-2])
+
 
 @client.event
 async def on_ready():
