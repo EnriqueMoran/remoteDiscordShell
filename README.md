@@ -7,7 +7,7 @@ It also has a log file for tracking users input, that registers the date, comman
 
 
 ## How it works
-Through the configuration file, you can chose which Discord server will have access to the bot (non registered servers won't get any reply from the bot). To access to the computer control, Discord users must log into the system, the password will be asked by DM to any unregistered user that send any command.
+Through the configuration file, you can chose which Discord server will are accessible for the bot (non registered servers won't get any reply from the bot). To access to the computer control, Discord users must log into the system, the password will be asked by DM to any unregistered user that send any command.
 
 Once the user is logged in, all (avaliable) commands sent will be processed by the computer and the generated output will be sent back to the user in real time.
 
@@ -15,43 +15,43 @@ There is a list of forbidden commands that can't be used due to unexpected behav
 
 There is a set of special commands for specific actions such update or upgrade the system, the list of avaliable special commands is the following:
 - **/start:** Send initial message with useful information about this bot.
-- **/update:** Update system (might need access permission).
-- **/upgrade:** Upgrade system (might need access permission).
-- **/install:** Ask for a package and install it (might need access permission).
-- **/uninstall:** Ask for a package, then remove and purge it (migth need access permission).
+- **/update:** Update system (might need root permission).
+- **/upgrade:** Upgrade system (might need root permission).
+- **/install:** Ask for a package and install it (might need root permission).
+- **/uninstall:** Ask for a package, then remove and purge it (migth need root permission).
 - **/forbidden:** Show forbidden command list.
 - **/help:** Show useful information about this bot.
 
 
 ## Installation guide
-First step is downloading this project, use this command:
+First step is downloading this project using the following command:
 ```
 git clone https://github.com/EnriqueMoran/remoteDiscordShell.git
 ```
 
-After cloning the repository in your own computer (it must be Linux OS), the following step is installing discord library (notice that this bot is compatible with python 3.7+, so pip3 might be necessary to use):
+After cloning the repository in your own computer (it should be Linux OS), the following step is installing discord library (notice that this bot is compatible with python 3.7+, so pip3 might be necessary to use):
 ```
 pip install discord
 ```
 
-After this, we need to create a new bot and adding it to our server.
+After this, we need to create a new bot and add it to our server.
 1. Access to [Discord's developer portal](https://discord.com/developers/applications) and click on *New Application*.
 
 2. Click on *Bot*, at left side menu and add a new bot.
 
 ![alt tag](/readme_images/image1.png)
 
-3. Add the bot to your server. Go to *Oauth2* in left side menu and check **bot** and **administrator** options in *SCOPES* and *BOT PERMISSIONS*.
+3. Add the bot to your server. Go to *Oauth2* on left side menu and check **bot** and **administrator** options in *SCOPES* and *BOT PERMISSIONS*.
 
 ![alt tag](/readme_images/image2.png)
 
-4. Access to generated url on your browser and select the server you want to add the bot.
+4. Access to generated url on your browser and select the server you want to add the bot in.
 
-5. On your bot page, copy the token. Open *config.txt* file and fill the blanks. The file paths MUST be absolute. 
+5. In your bot page, copy the token. Open *config.txt* file and fill the blanks (file paths MUST be absolute). 
 
 ![alt tag](/readme_images/image3.png)
 
-Depending on the chosen directory and if sudo parameter is active, it might be necessary to change access permissions of the files, this can be done with chmod command.
+Depending on the chosen directory and if sudo parameter is active, it might be necessary to change access permissions of files, this can be done with chmod command.
 
 6. Last step is executing .py script and start using our computer through Discord.
 ```
@@ -67,7 +67,7 @@ To download files from the computer use "getfile + path" (e.g. getfile /home/use
 
 
 
-![alt tag](/readme_images/gif3.gif)
+![alt tag](/readme_images/image5.png)
 
 
 ## Supported distros
