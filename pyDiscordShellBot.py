@@ -5,11 +5,12 @@ import datetime
 import hashlib
 import time
 import discord
+import requests
 
 
 __author__ = "EnriqueMoran"
 
-__version__ = "v0.0.2"
+__version__ = "v0.0.3"
 
 
 TOKEN = None
@@ -27,10 +28,14 @@ USERSUPDATE = []   # List of users id waiting to update system's response
 USERSUPGRADE = []   # List of users id waiting to upgrade system's response
 USERSINSTALL = []   # List of users id waiting to install a package
 USERSUNINSTALL = []   # List of users id waiting to uninstall a package
+AVALIABLECOMMANDS = [
+    "/start", "/update", "/upgrade", "/install", "/uninstall", "/forbidden",
+    "/help"
+    ]
 FORBIDDENCOMMANDS = [
     "wait", "exit", "clear", "aptitude", "raspi-config",
     "nano", "dc", "htop", "ex", "expand", "vim", "man", "apt-get", "poweroff",
-    "reboot", "ssh", "scp", "wc"
+    "reboot", "ssh", "scp", "wc", "vi"
     ]    # non working commands due to API error or output eror
 
 
@@ -121,7 +126,7 @@ async def check_config(message):
         error_msg += "\n- Root field is empty."
     if error:
         await message.channel.send(error_msg)
-    return error
+    return await error
 
 
 def in_guild(func):    # Check if bot is in configured server
@@ -156,6 +161,20 @@ def check_user_login(login):    # Check if user ID is on users.txt
         if encrypted_login in content:
             check = True
     return check
+
+
+def register_log(message):    # Register message in log.txt
+    global LOGLIMIT, LOG, LOGLINES
+    LOGLINES += 1
+    with open(LOG, 'a+') as f:
+        now = datetime.datetime.now().strftime("%m-%d-%y %H:%M:%S ")
+        f.write(now + "[" + str(message.author.name) + " (" +
+                str(message.author.id) + ")]: " + str(message.content) + "\n")
+    if LOGLIMIT > 0 and LOGLINES > LOGLIMIT:
+        with open(LOG) as f:
+            lines = f.read().splitlines(True)
+        with open(LOG, 'w+') as f:
+            f.writelines(lines[abs(LOGLINES - LOGLIMIT):])
 
 
 async def updateSystem(message):
@@ -241,6 +260,59 @@ async def installPackage(message):
         await message.channel.send(str(errorType))
 
 
+async def removePackage(message):
+    try:
+        proc = subprocess.Popen('sudo apt-get --purge remove -y ' + 
+                                message.content, shell=True, stdin=None,
+                                stdout=subprocess.PIPE, 
+                                executable="/bin/bash")
+        already_removed = False
+
+        while True:
+            output = proc.stdout.readline()
+            already_removed = (already_removed or
+                                 "0 to remove" in str(output))
+            if output == b'' and proc.poll() is not None:
+                break
+            if output:
+                await message.channel.send(output.decode('utf-8'))
+        proc.wait()
+
+        if already_removed:
+                    return    # Dont send any message
+        if proc.poll() == 0:
+            await message.channel.send(f"Package {message.content} " +
+                                       "sucessfully removed.")
+        else:
+            await message.channel.send(f"Package {message.content} " +
+                                       "not removed. Error code: " +
+                                       str(proc.poll()))
+    except Exception as e:
+        error = "Error ocurred: " + str(e)
+        errorType = "Error type: " + str((e.__class__.__name__))
+        await message.channel.send(str(error))
+        await message.channel.send(str(errorType))
+
+
+async def show_forbidden_commands(message):
+    res = ""
+    for element in FORBIDDENCOMMANDS:
+        res += element + ", "
+    await message.channel.send(res[:-2])
+
+
+async def show_help(message):
+    global VERSION
+    message_one = "Current version: " + VERSION
+    message_two = "Welcome to remoteDiscordShell, this bot allows users " + \
+    "to remotely control a computer terminal. Current commands: "
+    await message.channel.send(message_one)
+    await message.channel.send(message_two)
+    res = ""
+    for element in AVALIABLECOMMANDS:
+        res += element + ", "
+    await message.channel.send(res[:-2]) 
+
 @client.event
 async def on_ready():
     global TOKEN, GUILD, INGUILD
@@ -259,6 +331,9 @@ async def on_message(message):
         USERSUPGRADE, USERSINSTALL, USERSUNINSTALL
     if message.author == client.user:
         return
+
+    register_log(message)
+
     if message.author.id in USERSLOGIN:    # User must add password to access
         if message.content == PASSWORD:
             register(message.author.id)    # Grant access to user
@@ -266,6 +341,14 @@ async def on_message(message):
             response = "Logged in, you can use commands now."
             await message.author.dm_channel.send(response)
             return
+
+    if not check_user_login(message.author.id):
+        USERSLOGIN.append(message.author.id)  # Waiting for pass to be written
+        await message.author.create_dm()
+        response = "Please log in, insert password:"
+        await message.author.dm_channel.send(response)
+        return
+
     if message.author.id in USERSUPDATE:
         # User must reply wether update system or not
         if message.content.lower() == 'yes':
@@ -281,6 +364,7 @@ async def on_message(message):
             response = "Please reply 'yes' or 'no'."
             await message.channel.send(response)
         return
+
     if message.author.id in USERSUPGRADE:
         # User must reply wether upgrade system or not
         if message.content.lower() == 'yes':
@@ -296,12 +380,14 @@ async def on_message(message):
             response = "Please reply 'yes' or 'no'."
             await message.channel.send(response)
         return
+
     if not check_user_login(message.author.id):
         USERSLOGIN.append(message.author.id)  # Waiting for pass to be written
         await message.author.create_dm()
         response = "Please log in, insert password:"
         await message.author.dm_channel.send(response)
         return
+
     if message.author.id in USERSINSTALL:
         # User must reply which package to install
         if message.content.lower() == 'cancel':
@@ -314,12 +400,27 @@ async def on_message(message):
             await message.channel.send(response)
             await installPackage(message)
         return
-    if not check_user_login(message.author.id):
-        USERSLOGIN.append(message.author.id)  # Waiting for pass to be written
-        await message.author.create_dm()
-        response = "Please log in, insert password:"
-        await message.author.dm_channel.send(response)
+
+    if message.author.id in USERSUNINSTALL:
+        # User must reply which package to install
+        if message.content.lower() == 'cancel':
+            USERSINSTALL.remove(message.author.id)
+            response = "No package will be removed."
+            await message.channel.send(response)
+        else:
+            USERSINSTALL.remove(message.author.id)
+            response = "Trying to remove package..."
+            await message.channel.send(response)
+            await removePackage(message)
         return
+
+    if len(message.attachments) > 0:    # A file is sent
+        file_path = SHAREFOLDER + message.attachments[0].filename
+        r = requests.get(message.attachments[0].url)
+        with open(file_path, 'wb') as file:
+            file.write(r.content)
+        await message.channel.send(f"File saved as {file_path}")
+
     else:
         if message.content.lower() == '/start':    # TODO: TMP welcome message
             welcome_one = "Welcome to discordShell, this bot allows " + \
@@ -329,8 +430,8 @@ async def on_message(message):
                 "use /update \n- To upgrade system use /upgrade \n- To " + \
                 "view forbidden commands use /forbidden."
             welcome_three = "You can send files to the computer, " + \
-                "also download them by using getfile + path (e.g. getfile " + \
-                "/home/user/Desktop/file.txt)."
+                "also download them by using getfile + path (e.g. getfile" + \
+                " /home/user/Desktop/file.txt)."
             await message.channel.send(f"Current version: {VERSION}")
             await message.channel.send(welcome_one)
             await message.channel.send(welcome_two)
@@ -346,11 +447,14 @@ async def on_message(message):
                                        "'cancel' to exit: ")
             USERSINSTALL.append(message.author.id)  # Waiting for response
         elif message.content.lower() == '/uninstall':    # Remove package
-            pass    # TODO
+            await message.channel.send("Write package name to uninstall or " +
+                                       "'cancel' to exit: ")
+            USERSUNINSTALL.append(message.author.id)  # Waiting for response
         elif message.content.lower() == '/forbidden':    # Forbidden commands
-            pass    # TODO
+            await message.channel.send("Currently forbidden commands:")
+            await show_forbidden_commands(message)
         elif message.content.lower() == '/help':    # Show help message
-            pass    # TODO
+            await show_help(message)
         else:    # Linux command
             if message.content[0:2] == 'cd':
                 try:
@@ -359,10 +463,13 @@ async def on_message(message):
                                                str(os.getcwd()))
                 except Exception as e:
                     await message.channel.send(str(e))
+
             elif message.content.split()[0] in FORBIDDENCOMMANDS:
                 await message.channel.send("Forbidden command.")
+
             elif message.content[0:4] == "sudo" and not ROOT:
                 await message.channel.send("root commands are disabled.")
+
             elif (
                     message.content[0:4] == "ping" and
                     len(message.content.split()) == 2
@@ -387,10 +494,45 @@ async def on_message(message):
                     errorType = "Error type: " + str((e.__class__.__name__))
                     await message.channel.send(str(error))
                     await message.channel.send(str(errorType))
+
             elif message.content[0:3] == "top":
-                pass    # TODO
+                try:
+                    com = "top -b -n 1 |  \
+                    awk '{print $1, $2, $5, $8, $9, $10, $NF}' > \
+                    Qv0g09khgKtop4A80GUjQvU.txt"
+                    p = subprocess.Popen(com, stdout=subprocess.PIPE,
+                                         shell=True, cwd=os.getcwd(),
+                                         bufsize=1)
+                    time.sleep(1)
+
+                    com = "cat Qv0g09khgKtop4A80GUjQvU.txt"
+                    p = subprocess.Popen(com, stdout=subprocess.PIPE,
+                                         shell=True, cwd=os.getcwd(),
+                                         bufsize=1)
+
+                    file = discord.File('Qv0g09khgKtop4A80GUjQvU.txt')
+                    await message.channel.send(files=[file])
+
+                    time.sleep(1)
+                    com = "rm Qv0g09khgKtop4A80GUjQvU.txt"
+                    p = subprocess.Popen(com, stdout=subprocess.PIPE,
+                                         shell=True, cwd=os.getcwd(),
+                                         bufsize=1)
+                except Exception as e:
+                    error = "Error ocurred: " + str(e)
+                    errorType = "Error type: " + str((e.__class__.__name__))
+                    await message.channel.send(str(error))
+                    await message.channel.send(str(errorType))
+
             elif message.content[0:7] == "getfile":
-                pass    # TODO
+                file_path = os.path.join(message.content[7:].strip())
+                if os.path.isfile(file_path):
+                    await message.channel.send("Sending file.")
+                    file = discord.File(file_path)
+                    await message.channel.send(files=[file])
+                else:
+                    await message.channel.send("File doesn't exists.")
+
             else:
                 try:
                     p = subprocess.Popen(message.content,
