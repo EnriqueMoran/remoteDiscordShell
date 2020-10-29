@@ -84,7 +84,7 @@ Future changes and features:
 * Add ctrl+c command.
 * Add multiple servers usage support.
 * Add welcome message for the first time this bot is used in a server.
-* Check wether the bot has permission to write in channels.
+* Check whether the bot has permission to write in channels.
 
 
 ## Version history
