@@ -1,54 +1,70 @@
-#############################  remoteDiscordShell config file  #############################
+;###########################;  remoteDiscordconfig file  #############################
 
 
-# This is the main configuration file. Before running remoteDiscordShell.py you must edit
-# this file and fill the following parameters in order to correctly configure the program.
+; This is the main configuration file. Before running remoteTelegramShell.py you must edit
+; this file and fill the following parameters in order to correctly configure the program.
 
 
-# Version - This parameter is automatically filled. Current version will be shown on /help
-# option. Please do not modify.
-version = v0.0.3
+[GENERAL]
+
+; token - This is bot auth token, necessary to connect bot to Telegram device.
+token=
 
 
-# TOKEN - This is bot auth token, necessary to connect bot to Discord device.
-token = 
+; guild_name - Server's name. If you modify your server's name, the change must be done
+; in this file too.
+guild_name=
+
+; channels_name - Server's channel. If you modify your channel's name, the change must be done
+; in this file too. Example: channels_name = ["mvware-ubuntu20_04", "channel_2"]
+channels_name=
 
 
-# GUILD name - Server's name. If you modify your server's name, the change must be done
-# in this file too.
-guildName = 
+; password - New users will need to use it in order to access to the service. Logged users
+; ID will be stored in users.txt. If there are users stored and you want to change the
+; password, you MUST delete users.txt file or its content.
+password=
 
 
-# Password - New users will need to use it in order to access to the service. Logged users
-# ID will be stored in users.txt. If there are users stored and you want to change the
-# password, you MUST delete users.txt file or its content.
-password = 
+[FILES]
+
+; shared_folder - Absolute path to file sharing folder (ending with slash). All files 
+; sent will be stored here, dont choose a root-protected one.
+; It MUST be changed with absolute path, ending with slash.
+; Example: shared_folder=/home/usr/Desktop/shared_folder/
+shared_folder=
 
 
-# File sharing folder - Absolute path to file sharing folder (ending in slash). All files 
-# sent through drag and drop will be stored there, dont choose a root-protected one.
-# It MUST be changed with absolute path.
-shareFolder = ./SharedFiles/
+; users_file - Absolute path to users.txt. This file content is allowed users. Will be
+; checked on every command the bot recieves. Users ID will be hashed and stored in order to
+; preserve anonymity. Default value is the directory remoteTelegramShell.py is located at.
+; It MUST be changed with absolute path.
+; Example: users_file=/home/usr/Desktop/shared_folder/users.txt
+users_file=
 
 
-# usersFile - Absolute path to users.txt. This file content is allowed users. Will be
-# checked on every command the bot recieves. Users ID will be hashed and stored in order to
-# preserve anonymity. Default value is the directory remoteTelegramShell.py is located at.
-# It MUST be changed with absolute path.
-usersFile = ./users.txt
+; log_file - Absolute path to log.txt. This file registers user's ID and input besides the
+; date and time. Default value is the directory remoteTelegramShell.py is located at.
+; It MUST be changed with absolute path.
+; Example: log_file=/home/usr/Desktop/shared_folder/log.txt
+log_file=
 
 
-# logFile - Absolute path to log.txt. This file registers user's ID and input besides the
-# date and time. Default value is the directory remoteTelegramShell.py is located at.
-# It MUST be changed with absolute path.
-logFile = ./log.txt
+; log_limit - Number of stored lines on log.txt. Default value is 500.
+log_limit=500
 
 
-# logLimit - Number of stored lines on log.txt. Default value is 500.
-logLimit = 500
+[PERMISSIONS]
+
+; enable_root - Allow root access, default value is "False" (disabled). If you want to enable
+; root access, make sure you choose a strong password, since logged users will have
+; total control of the computer. Change it to "True" (without quotes).
+enable_root=False
 
 
-# root - Allow root access, default value is "False" (disabled). If you want to enable
-# root access, make sure you choose a strong password, since logged users will have
-# total control of the computer. Change it to "True" (without quotes).
-root = False
+[USAGE]
+
+; forbidden_commands - List of forbidden commands. Add here commands that throw errors, unexpected behaviour, etc...
+forbidden_commands= ["wait", "exit", "clear", "aptitude", "raspi-config",
+    "nano", "dc", "htop", "ex", "expand", "vim", "man", "apt-get", "poweroff",
+    "reboot", "ssh", "scp", "wc", "vi", "bash"] 
