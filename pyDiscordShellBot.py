@@ -35,7 +35,7 @@ AVALIABLECOMMANDS = [
 FORBIDDENCOMMANDS = [
     "wait", "exit", "clear", "aptitude", "raspi-config",
     "nano", "dc", "htop", "ex", "expand", "vim", "man", "apt-get", "poweroff",
-    "reboot", "ssh", "scp", "wc", "vi", "bash"
+    "reboot", "ssh", "scp", "wc", "vi"
     ]    # non working commands due to API error or output eror
 
 
