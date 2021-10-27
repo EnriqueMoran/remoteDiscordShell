@@ -1,26 +1,43 @@
 # remoteDiscordShell
-remoteDiscordShell is a remote shell for Linux that makes use of Discord's conection to send commands and receive messages from the computer. It has an user login system and root restriction in order to avoid malicious connections from other Discord users. _"discord"_ module is needed. This tool is specially useful if you want to connect to a computer that is behind a private network without opening ports or just want to control your computer through Discord, without using any other ssh client.
+remoteDiscordShell is a remote shell for Linux that makes use of Discord's conection to send commands and receive their output from the computer.
+This tool is specially useful if you want to connect to a computer that is behind a private network without opening ports or just want to control your computer through Discord, without using any ssh client.
 
-It also has a log file for tracking users input, that registers the date, command and user ID.
 
-![alt tag](/readme_images/gif1.gif)
+![alt tag](/readme_images/readme_img_1.gif)
+
+
+## Features
+- Control your computer even if its in a private network.
+- Send and download any file to/from your computer.
+- All Linux distros supported.
+- Login system and root restriction to avoid malicious connections from other users.
+- Log system to register every sent command.
+- Configure the server channels you want the bot to write in.
+- Update/upgrade your system remotely.
+- Install/remove any package remotely.
+- Ban any command you don't want to be sent to the computer.
+
+
+![alt tag](/readme_images/readme_img_2.gif)
 
 
 ## How it works
-Through the configuration file, you can chose which Discord server will are accessible for the bot (non registered servers won't get any reply from the bot). To access to the computer control, Discord users must log into the system, the password will be asked by DM to any unregistered user that send any command.
+Through the configuration file, you can chose which Discord server and channels will be accessible for the bot. To access to the computer control, Discord users must log into the system, the password will be asked through DM to any unregistered user that send any command.
 
-Once the user is logged in, all (avaliable) commands sent will be processed by the computer and the generated output will be sent back to the user in real time.
+Once the user is logged in, all (allowed) commands sent will be processed by the computer and the generated output will be sent back to the user in real time.
 
-There is a list of forbidden commands that can't be used due to unexpected behaviour (for example non generating output commands such nano or vim), if you find any allowed command that causes any error, please report it. To check the forbidden commands list use **/forbidden**.
+There is a configurable list of forbidden commands that shouldn't be used due to unexpected behaviour (e.g. non generating output commands such nano or vim).
 
 There is a set of special commands for specific actions such update or upgrade the system, the list of avaliable special commands is the following:
-- **/start:** Send initial message with useful information about this bot.
-- **/update:** Update system (might need root permission).
-- **/upgrade:** Upgrade system (might need root permission).
-- **/install:** Ask for a package and install it (might need root permission).
-- **/uninstall:** Ask for a package, then remove and purge it (migth need root permission).
+- **/update:** Update system.
+- **/upgrade:** Upgrade system.
+- **/install:** Ask for a package and install it.
+- **/uninstall:** Ask for a package, then remove and purge it.
+- **/help:** Show help message.
+- **/reload:** Load config again.
+- **/stop:** Send CTRL+C signal to current running process.
 - **/forbidden:** Show forbidden command list.
-- **/help:** Show useful information about this bot.
+- **/getfile:** Download specified file (absolute path).
 
 
 ## Installation guide
@@ -60,35 +77,20 @@ python3 pyDiscordShellBot.py &              (this will run the script in backgro
 ```
 
 ## Sending and receiving files
-To send files just drag and drop on the chat, they will be stored in configured shareFolder.
-To download files from the computer use "getfile + path" (e.g. getfile /home/user/Desktop/test-file.txt).
+To send files just drag and drop them on the chat, they will be stored in configured shareFolder.
 
-![alt tag](/readme_images/gif2.gif)
-
+![alt tag](/readme_images/readme_img_4.gif)
 
 
-![alt tag](/readme_images/image5.png)
+To download files from the computer use "/getfile + path" (e.g. /getfile /home/user/Desktop/test-file.txt).
 
-
-## Supported distros
-Debian and Ubuntu based distros can be updated and upgraded, install and uninstall packages aswell (because apt-get is used). I am currently working on adding support for the rest of package managers and distros.
-
-
-## Roadmap
-Future changes and features:
-* Improve compatibility with Linux distros (currently, install/uninstall commands uses apt-get).
-* Test and improve root option.
-* Improve security.
-* Improve Windows compatibility.
-* Add parameter to allow file sending.
-* Add ctrl+c command.
-* Add multiple servers usage support.
-* Add welcome message for the first time this bot is used in a server.
-* Check wether the bot has permission to write in channels.
+![alt tag](/readme_images/readme_img_3.gif)
 
 
 ## Version history
 Check [project releases](https://github.com/EnriqueMoran/remoteDiscordShell/releases) for more info.
+
 - **v0.0.1:** (06/29/20) Basic functionalities added.
 - **v0.0.2:** (07/02/20) Update/upgrade system and package installation features added.
 - **v1.0.0:** (07/07/20) Upload/download files features added, log is working now.
+- **v1.1.0:** (10/27/21) Major changes. Specific channels usage implemented, multiple distro support added.

@@ -14,33 +14,39 @@ import time
 
 __author__ = "EnriqueMoran"
 
-__version__ = "v1.1.0b"
+__version__ = "v1.1.0"
 
 
 TOKEN = None
-GUILD_NAME = None          # Server's name
-CHANNELS_NAME = []         # Server's channels
+GUILD_NAME = None             # Server's name
+CHANNELS_NAME = []            # Server's channels
 PASSWORD = None
-SHARED_FOLDER = None       # Shared files storage folder path
-USERS_FILE = None          # users.txt path
-LOG_FILE = None            # log.txt path
-LOG_LIMIT = None           # Max number of lines to register in log
+SHARED_FOLDER = None          # Shared files storage folder path
+USERS_FILE = None             # users.txt path
+LOG_FILE = None               # log.txt path
+LOG_LIMIT = None              # Max number of lines to register in log
 ENABLE_ROOT = False
-FORBIDDEN_COMMANDS = []    # Non working / disabled commands
+FORBIDDEN_COMMANDS = []       # Non working/disabled commands
 
-CLIENT = discord.Client()  # Discord client
-IN_GUILD = False           # Is bot running in configured server?
-LOG_LINES = 0              # Current lines of log.txt
-COMMANDS_QUEUE = {}        # Used for updating and upgrading the system
-AUTHENTIFIED_USERS = {}    # Users allowed to send commands
-CUSTOM_COMMANDS = []       # Bot custom commands
-FORBIDDEN_COMMANDS = []    # Non working commands
-CURRENT_PROCESS = None     # Current process being executed
+CLIENT = discord.Client()     # Discord client
+IN_GUILD = False              # Is bot running in configured server?
+LOG_LINES = 0                 # Current lines of log.txt
+COMMANDS_QUEUE = {}           # Used for updating and upgrading the system
+AUTHENTIFIED_USERS = set()    # Users allowed to send commands
+CUSTOM_COMMANDS = []          # Bot custom commands
+FORBIDDEN_COMMANDS = []       # Non working commands
+CURRENT_PROCESS = None        # Current process being executed
+
+UPDATE_COMMAND = None         # Command used to update system
+UPGRADE_COMMAND = None        # Command used to upgrade system
+INSTALL_COMMAND = None        # Command used to install a package
+REMOVE_COMMAND = None         # Command used to remove a package
 
 
 def load_config(config_file):
     global TOKEN, GUILD_NAME, CHANNELS_NAME, PASSWORD, SHARED_FOLDER, \
-           USERS_FILE, LOG_FILE, LOG_LIMIT, ENABLE_ROOT, FORBIDDEN_COMMANDS
+           USERS_FILE, LOG_FILE, LOG_LIMIT, ENABLE_ROOT, FORBIDDEN_COMMANDS, \
+           UPDATE_COMMAND, UPGRADE_COMMAND, INSTALL_COMMAND, REMOVE_COMMAND
     config = configparser.ConfigParser()
     config.read(config_file)
     TOKEN = config.get('GENERAL', 'token')
@@ -51,8 +57,12 @@ def load_config(config_file):
     USERS_FILE = config.get('FILES', 'users_file')
     LOG_FILE = config.get('FILES', 'log_file')
     LOG_LIMIT = int(config.get('FILES', 'log_limit'))
-    ENABLE_ROOT = bool(config.get('PERMISSIONS', 'enable_root'))
+    ENABLE_ROOT = config.getboolean('PERMISSIONS', 'enable_root')
     FORBIDDEN_COMMANDS = json.loads(config.get('USAGE', 'forbidden_commands'))
+    UPDATE_COMMAND = config.get('USAGE', 'update_command')
+    UPGRADE_COMMAND = config.get('USAGE', 'upgrade_command')
+    INSTALL_COMMAND = config.get('USAGE', 'install_command')
+    REMOVE_COMMAND = config.get('USAGE', 'uninstall_command')
 
 
 def initialize():
@@ -90,7 +100,8 @@ def initialize():
 
 def check_config():
     global TOKEN, GUILD_NAME, CHANNELS_NAME, PASSWORD, SHARED_FOLDER, \
-           USERS_FILE, LOG_FILE, LOG_LIMIT, ENABLE_ROOT, FORBIDDEN_COMMANDS
+           USERS_FILE, LOG_FILE, LOG_LIMIT, ENABLE_ROOT, FORBIDDEN_COMMANDS, \
+           UPDATE_COMMAND, UPGRADE_COMMAND, INSTALL_COMMAND, REMOVE_COMMAND
 
     error = False
     error_msg = "Config file not properly filled, errors:"
@@ -121,11 +132,23 @@ def check_config():
     if not LOG_LIMIT or LOG_LIMIT < 0:
         error = True
         error_msg += "\n- Log limit wrong value."
-    if not ENABLE_ROOT:
+    if type(ENABLE_ROOT) is not bool:
         error = True
         error_msg += "\n- Enable root field is empty."
     if not FORBIDDEN_COMMANDS:
         FORBIDDEN_COMMANDS = []
+    if not UPDATE_COMMAND:
+        error = True
+        error_msg += "\n - Update system command is empty."
+    if not UPGRADE_COMMAND:
+        error = True
+        error_msg += "\n - Upgrade system command is empty."
+    if not INSTALL_COMMAND:
+        error = True
+        error_msg += "\n - Install package command is empty."
+    if not REMOVE_COMMAND:
+        error = True
+        error_msg += "\n - Remove package command is empty."
     return error, error_msg
 
 
@@ -228,7 +251,8 @@ async def update_system(message):
     """
     Run update command depending on SO distro
     """
-    # TODO: add distro support
+    global UPDATE_COMMAND
+
     # TODO: paralellize loading message to avoid discord edit limit
     output_text = "Updating system"
     loading_items = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
@@ -238,14 +262,17 @@ async def update_system(message):
                                 type=discord.ChannelType.text)
     msg_output = await channel.send(output_text)
     try:
-        command = f'echo {message.content} | sudo -S apt-get update -y'
+        command = f'echo {message.content} | sudo -S {UPDATE_COMMAND} -y'
+        print(f"command: {command}")
         proc = subprocess.Popen(command, shell=True, stdin=None,
-                                stdout=subprocess.PIPE, executable="/bin/bash")
+                                stdout=subprocess.PIPE,
+                                executable="/bin/bash")
         while True:
             output = proc.stdout.readline()
             if output == b'' and proc.poll() is not None:
                 break
-            await msg_output.edit(content=loading_items[i % (len(loading_items))] + output_text)
+            await msg_output.edit(content=loading_items[i %
+                                  (len(loading_items))] + output_text)
             i += 1
         proc.wait()
         if proc.poll() == 0:
@@ -265,7 +292,8 @@ async def upgrade_system(message):
     """
     Run upgrade command depending on SO distro
     """
-    # TODO: add distro support
+    global UPDATE_COMMAND
+
     # TODO: paralellize loading message to avoid discord edit limit
     output_text = "Upgrading system"
     loading_items = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
@@ -275,15 +303,17 @@ async def upgrade_system(message):
                                 type=discord.ChannelType.text)
     msg_output = await channel.send(output_text)
     try:
-        command = f'echo {message.content} | sudo -S apt-get upgrade -y'
+        command = f'echo {message.content} | sudo -S {UPGRADE_COMMAND} -y'
         proc = subprocess.Popen(command, shell=True, stdin=None,
-                                stdout=subprocess.PIPE, executable="/bin/bash")
+                                stdout=subprocess.PIPE,
+                                executable="/bin/bash")
 
         while True:
             output = proc.stdout.readline()
             if output == b'' and proc.poll() is not None:
                 break
-            await msg_output.edit(content=loading_items[i % (len(loading_items))] + output_text)
+            await msg_output.edit(content=loading_items[i %
+                                  (len(loading_items))] + output_text)
             i += 1
         proc.wait()
 
@@ -303,7 +333,8 @@ async def install_package(message):
     """
     Run install package command depending on SO distro
     """
-    # TODO: add distro support
+    global INSTALL_COMMAND
+
     # TODO: paralellize loading message to avoid discord edit limit
     output_text = "Installing package: " + message.content
     loading_items = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
@@ -313,10 +344,11 @@ async def install_package(message):
                                 type=discord.ChannelType.text)
     msg_output = await channel.send(output_text)
     try:
-        command = f'echo {message.content} | sudo -S \
-                    apt-get install -y ' + message.content
+        command = f'echo {message.content} | sudo -S {INSTALL_COMMAND} -y' + \
+                  f' {message.content}'
         proc = subprocess.Popen(command, shell=True, stdin=None,
-                                stdout=subprocess.PIPE, executable="/bin/bash")
+                                stdout=subprocess.PIPE,
+                                executable="/bin/bash")
         already_installed = False
 
         while True:
@@ -325,7 +357,8 @@ async def install_package(message):
                                  "0 newly installed" in str(output))
             if output == b'' and proc.poll() is not None:
                 break
-            await msg_output.edit(content=loading_items[i % (len(loading_items))] + output_text)
+            await msg_output.edit(content=loading_items[i %
+                                  (len(loading_items))] + output_text)
             i += 1
         proc.wait()
 
@@ -349,7 +382,8 @@ async def remove_package(message):
     """
     Run remove package command depending on SO distro
     """
-    # TODO: add distro support and
+    global REMOVE_COMMAND
+
     # TODO: paralellize loading message to avoid discord edit limit
     output_text = "Removing package: " + message.content
     loading_items = ["⢿", "⣻", "⣽", "⣾", "⣷", "⣯", "⣟", "⡿"]
@@ -359,10 +393,11 @@ async def remove_package(message):
                                 type=discord.ChannelType.text)
     msg_output = await channel.send(output_text)
     try:
-        command = f'echo {message.content} | sudo -S \
-                    apt-get --purge remove -y ' + message.content
+        command = f'echo {message.content} | sudo -S {REMOVE_COMMAND} -y' + \
+                  f' {message.content}'
         proc = subprocess.Popen(command, shell=True, stdin=None,
-                                stdout=subprocess.PIPE, executable="/bin/bash")
+                                stdout=subprocess.PIPE,
+                                executable="/bin/bash")
         already_removed = False
 
         while True:
@@ -371,18 +406,19 @@ async def remove_package(message):
                                "0 to remove" in str(output))
             if output == b'' and proc.poll() is not None:
                 break
-            await msg_output.edit(content=loading_items[i % (len(loading_items))] + output_text)
+            await msg_output.edit(content=loading_items[i %
+                                  (len(loading_items))] + output_text)
             i += 1
         proc.wait()
         if already_removed:
                     return    # Dont send any message
         if proc.poll() == 0:
             await msg_output.edit(content=f"Package {message.content} " +
-                                            "sucessfully removed.")
+                                           "sucessfully removed.")
         else:
             await msg_output.edit(content=f"Package {message.content} " +
-                                            "not removed. Error code: " +
-                                            str(proc.poll()))
+                                           "not removed. Error code: " +
+                                           str(proc.poll()))
     except Exception as e:
         error = "Error ocurred: " + str(e)
         error_type = "Error type: " + str((e.__class__.__name__))
@@ -435,19 +471,21 @@ async def send_welcome_msg(guild):
               "you to remotely control a computer through shell commands."
 
     msg_two = "\nList of avaliable commands: " + \
-              "\n    **· /update**: Update system using configured package system." + \
-              "\n    **· /upgrade**: Upgrade system using configured package system." + \
+              "\n    **· /update**: Update system using configured " + \
+              "package system." + \
+              "\n    **· /upgrade**: Upgrade system using configured " + \
+              "package system." + \
               "\n    **· /install**: Install a package." + \
               "\n    **· /uninstall**: Remove an installed package." + \
               "\n    **· /forbidden**: Show unavailable commands." + \
               "\n    **· /help**: Show this message." + \
               "\n    **· /reload**: Load the configuration file again." + \
-              "\n    **· /stop**: Send CTRL+C signal to running process."+ \
+              "\n    **· /stop**: Send CTRL+C signal to running process." + \
               "\n    **· /getfile**: Download the given file (absolute path)."
     msg_three = "\nSent files to the computer will be saved in" + \
                 f" configured shared folder: *{SHARED_FOLDER}*"
-    msg_four = "\nYou can download files by using getfile + absolute path " + \
-               "(*e.g. getfile /home/user/Desktop/file.txt*)."
+    msg_four = "\nYou can download files by using getfile + absolute " + \
+               "path (*e.g. getfile /home/user/Desktop/file.txt*)."
     channel = discord.utils.get(guild.channels, name=CHANNELS_NAME[0],
                                 type=discord.ChannelType.text)
     welcome_msg = msg_zero + msg_one + msg_two + msg_three + msg_four
@@ -503,7 +541,8 @@ async def on_message(message):
     if message.author == CLIENT.user:  # Ignore self messages
         return
 
-    register_log(message)
+    if in_channel(message):
+        register_log(message) 
 
     # Register access password
     if message.author.id not in AUTHENTIFIED_USERS:
@@ -514,7 +553,7 @@ async def on_message(message):
                 response = "Logged in, you can use commands now."
                 await message.author.dm_channel.send(response)
             return
-        if not check_user(message.author.id):
+        if not check_user(message.author.id) and in_channel(message):
             await message.author.create_dm()
             response = "Please log in, insert a valid password."
             await message.author.dm_channel.send(response)
@@ -544,6 +583,9 @@ async def on_message(message):
             COMMANDS_QUEUE['install'].pop(msg_id, None)
             COMMANDS_QUEUE['uninstall'].pop(msg_id, None)
             await message.author.dm_channel.send(response)
+
+    if not in_channel(message):
+        return
 
     # Custom message response
     if message.author.id in COMMANDS_QUEUE['update']:
@@ -601,113 +643,113 @@ async def on_message(message):
         with open(file_path, 'wb') as file:
             file.write(r.content)
         await message.channel.send(f"File saved as {file_path}")
+        return
 
+    if message.content.lower() == '/update':    # Update system
+        await message.channel.send("Update system? (Write yes/no): ")
+        COMMANDS_QUEUE['update'].add(message.author.id)
+    elif message.content.lower() == '/upgrade':    # Upgrade system
+        await message.channel.send("Upgrade system? (Write yes/no): ")
+        COMMANDS_QUEUE['upgrade'].add(message.author.id)
+    elif message.content.lower() == '/install':    # Install package
+        await message.channel.send("Write package name to install or " +
+                                   "'cancel' to exit: ")
+        COMMANDS_QUEUE['install'][message.author.id] = None
+    elif message.content.lower() == '/uninstall':    # Remove package
+        await message.channel.send("Write package name to uninstall or " +
+                                   "'cancel' to exit: ")
+        COMMANDS_QUEUE['uninstall'][message.author.id] = None
+    elif message.content.lower() == '/forbidden':    # Forbidden commands
+        await message.channel.send("Currently forbidden commands:")
+        await show_forbidden_commands(message)
+    elif message.content.lower() == '/help':    # Show help message
+        await send_welcome_msg(message)
+    elif message.content.lower() == '/reload':    # Reload config file
+        initialize()
+    elif message.content.lower() == '/stop':    # Send ctrl+c
+        await stop_proccess(message)
     else:
-        if message.content.lower() == '/update':    # Update system
-            await message.channel.send("Update system? (Write yes/no): ")
-            COMMANDS_QUEUE['update'].add(message.author.id)
-        elif message.content.lower() == '/upgrade':    # Upgrade system
-            await message.channel.send("Upgrade system? (Write yes/no): ")
-            COMMANDS_QUEUE['upgrade'].add(message.author.id)
-        elif message.content.lower() == '/install':    # Install package
-            await message.channel.send("Write package name to install or " +
-                                       "'cancel' to exit: ")
-            COMMANDS_QUEUE['install'][message.author.id] = None
-        elif message.content.lower() == '/uninstall':    # Remove package
-            await message.channel.send("Write package name to uninstall or " +
-                                       "'cancel' to exit: ")
-            COMMANDS_QUEUE['uninstall'][message.author.id] = None
-        elif message.content.lower() == '/forbidden':    # Forbidden commands
-            await message.channel.send("Currently forbidden commands:")
-            await show_forbidden_commands(message)
-        elif message.content.lower() == '/help':    # Show help message
-            await send_welcome_msg(message)
-        elif message.content.lower() == '/reload':    # Reload config file
-            initialize()
-        elif message.content.lower() == '/stop':    # Send ctrl+c
-            await stop_proccess(message)
-        else:
-            if message.content[0:2] == 'cd':
-                try:
-                    os.chdir(message.content[3:])
-                    await message.channel.send("Changed directory to " +
-                                               str(os.getcwd()))
-                except Exception as e:
-                    await message.channel.send(str(e))
+        if message.content[0:2] == 'cd':
+            try:
+                os.chdir(message.content[3:])
+                await message.channel.send("Changed directory to " +
+                                           str(os.getcwd()))
+            except Exception as e:
+                await message.channel.send(str(e))
 
-            elif message.content.split()[0] in FORBIDDEN_COMMANDS:
-                await message.channel.send(f"{message.content.split()[0]} is" +
-                                            " a forbidden command.")
+        elif message.content.split()[0] in FORBIDDEN_COMMANDS:
+            await message.channel.send(f"{message.content.split()[0]} is" +
+                                        " a forbidden command.")
 
-            elif "sudo" in message.content and not ENABLE_ROOT:
-                await message.channel.send("Root commands are disabled.")
+        elif "sudo" in message.content and not ENABLE_ROOT:
+            await message.channel.send("Root commands are disabled.")
 
-            elif message.content[0:4] == "ping" and \
-                                         len(message.content.split()) == 2:
-                # Default ping, without arguments
-                ip = str(message.content).split()[1]
-                com = "ping " + str(ip) + " -c 4"    # Infinite ping fix
-                try:
-                    code, msg = await send_message(com, message.channel)
-                    if code != 0:
-                        text = " Name or service not known"
-                        await msg.edit(content=text)
-                except Exception as e:
-                    error = "Error ocurred: " + str(e)
-                    error_type = "Error type: " + str((e.__class__.__name__))
-                    await message.channel.send(str(error))
-                    await message.channel.send(str(error_type))
-            elif message.content[0:3] == "top":
-                try:
-                    # TODO: Use top -b plus message
-                    msg_text = "."
-                    msg_edit = await message.channel.send(msg_text)
+        elif message.content[0:4] == "ping" and \
+                                     len(message.content.split()) == 2:
+            # Default ping, without arguments
+            ip = str(message.content).split()[1]
+            com = "ping " + str(ip) + " -c 4"    # Infinite ping fix
+            try:
+                code, msg = await send_message(com, message.channel)
+                if code != 0:
+                    text = " Name or service not known"
+                    await msg.edit(content=text)
+            except Exception as e:
+                error = "Error ocurred: " + str(e)
+                error_type = "Error type: " + str((e.__class__.__name__))
+                await message.channel.send(str(error))
+                await message.channel.send(str(error_type))
+        elif message.content[0:3] == "top":
+            try:
+                # TODO: Use top -b plus message
+                msg_text = "."
+                msg_edit = await message.channel.send(msg_text)
 
-                    for i in range(25):
-                        com = "top -b -n 1 -o +%CPU | head -n 15 | awk " + \
-                              "'{OFS=\"\\t\"}; {print $1, $2, $5, $8, $9, +" \
-                              "$10, $NF}'"
+                for i in range(25):
+                    com = "top -b -n 1 -o +%CPU | head -n 15 | awk " + \
+                          "'{OFS=\"\\t\"}; {print $1, $2, $5, $8, $9, +" \
+                          "$10, $NF}'"
 
-                        p = subprocess.Popen(com,
-                                             stdout=subprocess.PIPE,
-                                             shell=True, cwd=os.getcwd())
-                        try:
-                            top_msg = ""
-                            for line in iter(p.stdout.readline,
-                                             b''):
-                                decoded = line.decode('windows-1252').strip()
-                                if len(re.sub('[^A-Za-z0-9]+', '',
-                                       decoded)) <= 0:
-                                    top_msg += "\n"
-                                else:
-                                    try:
-                                        top_msg += line.decode('utf-8')
-                                    except Exception as e:
-                                        await message.channel.send(str(e))
-                            await msg_edit.edit(content=top_msg)
-                        except:
-                            break
-                except Exception as e:
-                    error = "Error ocurred: " + str(e)
-                    error_type = "Error type: " + str((e.__class__.__name__))
-                    await message.channel.send(str(error))
-                    await message.channel.send(str(error_type))
+                    p = subprocess.Popen(com,
+                                         stdout=subprocess.PIPE,
+                                         shell=True, cwd=os.getcwd())
+                    try:
+                        top_msg = ""
+                        for line in iter(p.stdout.readline,
+                                         b''):
+                            decoded = line.decode('windows-1252').strip()
+                            if len(re.sub('[^A-Za-z0-9]+', '',
+                                   decoded)) <= 0:
+                                top_msg += "\n"
+                            else:
+                                try:
+                                    top_msg += line.decode('utf-8')
+                                except Exception as e:
+                                    await message.channel.send(str(e))
+                        await msg_edit.edit(content=top_msg)
+                    except:
+                        break
+            except Exception as e:
+                error = "Error ocurred: " + str(e)
+                error_type = "Error type: " + str((e.__class__.__name__))
+                await message.channel.send(str(error))
+                await message.channel.send(str(error_type))
 
-            elif message.content[0:8] == "/getfile":
-                file_path = os.path.join(message.content[8:].strip())
-                if os.path.isfile(file_path):
-                    file = discord.File(file_path)
-                    await message.channel.send(files=[file])
-                else:
-                    await message.channel.send("File doesn't exists.")
+        elif message.content[0:8] == "/getfile":
+            file_path = os.path.join(message.content[8:].strip())
+            if os.path.isfile(file_path):
+                file = discord.File(file_path)
+                await message.channel.send(files=[file])
+            else:
+                await message.channel.send("File doesn't exists.")
 
-            else:    # Any other command
-                try:
-                    if in_channel(message):
-                        await send_message(message.content, message.channel)
-                except Exception as e:
-                    error = "Error: Command not found"
-                    await message.channel.send(error, e)
+        else:    # Any other command
+            try:
+                if in_channel(message):
+                    await send_message(message.content, message.channel)
+            except Exception as e:
+                error = "Error: Command not found"
+                await message.channel.send(error, e)
     return
 
 

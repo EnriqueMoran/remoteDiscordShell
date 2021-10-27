@@ -68,5 +68,30 @@ enable_root=False
 ; throw errors, unexpected behaviour, etc...
 forbidden_commands=["apt-get","aptitude","bash","clear","dc","ex","exit",
                     "expand","htop","man","nano","poweroff","raspi-config",
-                    "reboot","scp","shutdown","ssh","vi","vim","wait","wc"
+                    "reboot","scp","shutdown","ssh","vi","vim","wait",
+                    "watch", "wc"
                     ]
+
+
+; update_command - Command used to update system (it depends on your Linux
+; distro).
+; Example: update_command=apt-get update
+update_command=apt-get update
+
+
+; upgrade_command - Command used to upgrade system (it depends on your Linux
+; distro).
+; Example: upgrade_command=apt-get upgrade
+upgrade_command=apt-get upgrade
+
+
+; install_command - Command used to install packages (it depends on your Linux
+; distro).
+; Example: install_command=apt-get install
+install_command=apt-get install
+
+
+; uninstall_command - Command used to remove packages (it depends on your
+; Linux distro).
+; Example: uninstall_command=apt-get --purge remove
+uninstall_command=apt-get --purge remove
