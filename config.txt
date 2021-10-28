@@ -69,7 +69,7 @@ enable_root=False
 forbidden_commands=["apt-get","aptitude","bash","clear","dc","ex","exit",
                     "expand","htop","man","nano","poweroff","raspi-config",
                     "reboot","scp","shutdown","ssh","vi","vim","wait",
-                    "watch", "wc"
+                    "watch", "wc", "su", "sudo -i", "sudo su"
                     ]
 
 
