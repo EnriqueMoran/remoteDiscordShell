@@ -14,7 +14,7 @@ import time
 
 __author__ = "EnriqueMoran"
 
-__version__ = "v1.1.0"
+__version__ = "v1.1.1"
 
 
 TOKEN = None
@@ -492,6 +492,14 @@ async def send_welcome_msg(guild):
     await channel.send(welcome_msg)
 
 
+def check_forbidden(message):
+    content = message.content.split()
+    for elem in content:
+        if elem in FORBIDDEN_COMMANDS:
+            return True, elem
+    return False, None
+
+
 async def send_message(command, channel):
     global CURRENT_PROCESS
 
@@ -669,6 +677,8 @@ async def on_message(message):
     elif message.content.lower() == '/stop':    # Send ctrl+c
         await stop_proccess(message)
     else:
+        forbidden, command = check_forbidden(message)
+
         if message.content[0:2] == 'cd':
             try:
                 os.chdir(message.content[3:])
@@ -677,9 +687,8 @@ async def on_message(message):
             except Exception as e:
                 await message.channel.send(str(e))
 
-        elif message.content.split()[0] in FORBIDDEN_COMMANDS:
-            await message.channel.send(f"{message.content.split()[0]} is" +
-                                        " a forbidden command.")
+        elif forbidden:
+            await message.channel.send(f"{command} is a forbidden command.")
 
         elif "sudo" in message.content and not ENABLE_ROOT:
             await message.channel.send("Root commands are disabled.")
