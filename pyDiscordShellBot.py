@@ -14,7 +14,7 @@ import time
 
 __author__ = "EnriqueMoran"
 
-__version__ = "v1.1.1"
+__version__ = "v1.1.2"
 
 
 TOKEN = None
@@ -85,6 +85,7 @@ def initialize():
                       'uninstall': {}
     }
     if not error:
+        os.makedirs(SHARED_FOLDER, exist_ok=True)
         f1 = open(LOG_FILE, "a+")
         f1.close
         f2 = open(USERS_FILE, "a+")
@@ -92,7 +93,6 @@ def initialize():
 
         with open(LOG_FILE) as f:
             LOG_LINES = sum(1 for _ in f)
-        os.makedirs(SHARED_FOLDER, exist_ok=True)
     else:
         print(error_msg)
         exit()
@@ -500,7 +500,7 @@ def check_forbidden(message):
     return False, None
 
 
-async def send_message(command, channel):
+async def send_command(command, channel):
     global CURRENT_PROCESS
 
     """
@@ -509,12 +509,17 @@ async def send_message(command, channel):
     output = "ㅤ"    # Invisible character
     msg_output = await channel.send(output)
     output = ""
+    n_lines = 0
     try:
         CURRENT_PROCESS = subprocess.Popen(command, shell=True, stdin=None,
                                            stdout=subprocess.PIPE,
                                            executable="/bin/bash")
         for line in iter(CURRENT_PROCESS.stdout.readline, b''):
             decoded = line.decode('windows-1252').strip()
+            if n_lines > 25:
+                msg_output = await channel.send(output)
+                n_lines = 0
+                output = ""
             if len(re.sub('[^A-Za-z0-9]+', '', decoded)) <= 0:
                 # Empty message that raises api 400 error
                 # Send special blank character
@@ -525,8 +530,11 @@ async def send_message(command, channel):
                     output += line.decode('utf-8')
                     await msg_output.edit(content=output)
                 except Exception as e:
-                    print("te")
-                    await msg_output.edit(content=e)
+                    msg_error = str(e)
+                    await channel.send(msg_error)
+                    error_code = str(e).split()[str(e).split().index('code:')
+                                                + 1][:-2]
+            n_lines += 1
         error = CURRENT_PROCESS.communicate()
         CURRENT_PROCESS.wait()
     except Exception as e:
@@ -550,7 +558,7 @@ async def on_message(message):
         return
 
     if in_channel(message):
-        register_log(message) 
+        register_log(message)
 
     # Register access password
     if message.author.id not in AUTHENTIFIED_USERS:
@@ -699,7 +707,7 @@ async def on_message(message):
             ip = str(message.content).split()[1]
             com = "ping " + str(ip) + " -c 4"    # Infinite ping fix
             try:
-                code, msg = await send_message(com, message.channel)
+                code, msg = await send_command(com, message.channel)
                 if code != 0:
                     text = " Name or service not known"
                     await msg.edit(content=text)
@@ -755,7 +763,7 @@ async def on_message(message):
         else:    # Any other command
             try:
                 if in_channel(message):
-                    await send_message(message.content, message.channel)
+                    await send_command(message.content, message.channel)
             except Exception as e:
                 error = "Error: Command not found"
                 await message.channel.send(error, e)
