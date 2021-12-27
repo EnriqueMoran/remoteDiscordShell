@@ -2,12 +2,14 @@
 remoteDiscordShell is a remote shell for Linux that makes use of Discord's conection to send commands and receive their output from the computer.
 This tool is specially useful if you want to connect to a computer that is behind a private network without opening ports or just want to control your computer through Discord, without using any ssh client.
 
+Check [remoteTelegramShell](https://github.com/EnriqueMoran/remoteTelegramShell) out for a similar solution working in Telegram.
+
 
 ![alt tag](/readme_images/readme_img_1.gif)
 
 
 ## Features
-- Control your computer even if its in a private network.
+- Control your computer even if its within a private network.
 - Send and download any file to/from your computer.
 - All Linux distros supported.
 - Login system and root restriction to avoid malicious connections from other users.
@@ -22,7 +24,7 @@ This tool is specially useful if you want to connect to a computer that is behin
 
 
 ## How it works
-Through the configuration file, you can chose which Discord server and channels will be accessible for the bot. To access to the computer control, Discord users must log into the system, the password will be asked through DM to any unregistered user that send any command.
+Through the configuration file, you can chose which Discord server and channels will be accessible for the bot. To access to the computer control, Discord users must log into the system, the password will be asked through DM to any unregistered user who sends a command.
 
 Once the user is logged in, all (allowed) commands sent will be processed by the computer and the generated output will be sent back to the user in real time.
 
@@ -37,7 +39,7 @@ There is a set of special commands for specific actions such update or upgrade t
 - **/reload:** Load config again.
 - **/stop:** Send CTRL+C signal to current running process.
 - **/forbidden:** Show forbidden command list.
-- **/getfile:** Download specified file (absolute path).
+- **/getfile:** Download the specified file (absolute path).
 
 
 ## Installation guide
@@ -76,8 +78,9 @@ python3 pyDiscordShellBot.py
 python3 pyDiscordShellBot.py &              (this will run the script in background)
 ```
 
+
 ## Sending and receiving files
-To send files just drag and drop them on the chat, they will be stored in configured shareFolder.
+To send files just drag and drop them on the chat, they will be stored in configured shared folder.
 
 ![alt tag](/readme_images/readme_img_4.gif)
 
@@ -85,6 +88,12 @@ To send files just drag and drop them on the chat, they will be stored in config
 To download files from the computer use "/getfile + path" (e.g. /getfile /home/user/Desktop/test-file.txt).
 
 ![alt tag](/readme_images/readme_img_3.gif)
+
+
+## TODO
+- Clean code and use decorators for user checking.
+- Parallelize loading messages (update, upgrade, install, remove) to avoid max edition limit.
+- Add configurable ignore key to avoid processing messages starting with that character.
 
 
 ## Version history
