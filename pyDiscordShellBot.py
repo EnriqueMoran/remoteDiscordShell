@@ -426,11 +426,11 @@ async def remove_package(message):
         await message.channel.send(str(error_type))
 
 
-async def show_forbidden_commands(channel):
+async def show_forbidden_commands(message):
     res = ""
     for element in FORBIDDEN_COMMANDS:
         res += element + ", "
-    await channel.send(res[:-2])
+    await message.channel.send(res[:-2])
 
 
 async def stop_proccess(message):    # Send ctrl+c to current process
@@ -679,7 +679,8 @@ async def on_message(message):
         await message.channel.send("Currently forbidden commands:")
         await show_forbidden_commands(message)
     elif message.content.lower() == '/help':    # Show help message
-        await send_welcome_msg(message)
+        guild = discord.utils.get(CLIENT.guilds, name=GUILD_NAME)
+        await send_welcome_msg(guild)
     elif message.content.lower() == '/reload':    # Reload config file
         initialize()
     elif message.content.lower() == '/stop':    # Send ctrl+c
