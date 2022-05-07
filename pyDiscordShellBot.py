@@ -528,7 +528,7 @@ async def send_command(command, channel):
             else:
                 try:
                     output += line.decode('utf-8')
-                    await msg_output.edit(content=output)
+                    await msg_output.edit(content=f"""```""" + output + f"""```""")
                 except Exception as e:
                     msg_error = str(e)
                     await channel.send(msg_error)
