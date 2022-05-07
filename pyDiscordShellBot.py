@@ -724,9 +724,7 @@ async def on_message(message):
                 msg_edit = await message.channel.send(msg_text)
 
                 for i in range(25):
-                    com = "top -b -n 1 -o +%CPU | head -n 15 | awk " + \
-                          "'{OFS=\"\\t\"}; {print $1, $2, $5, $8, $9, +" \
-                          "$10, $NF}'"
+                    com = "top -b -n 1 -o +%CPU | head -n 15"
 
                     p = subprocess.Popen(com,
                                          stdout=subprocess.PIPE,
@@ -744,7 +742,7 @@ async def on_message(message):
                                     top_msg += line.decode('utf-8')
                                 except Exception as e:
                                     await message.channel.send(str(e))
-                        await msg_edit.edit(content=top_msg)
+                        await msg_edit.edit(content=f"""```""" + top_msg + """```""")
                     except:
                         break
             except Exception as e:
