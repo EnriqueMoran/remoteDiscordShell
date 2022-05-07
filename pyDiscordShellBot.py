@@ -711,7 +711,7 @@ async def on_message(message):
                 code, msg = await send_command(com, message.channel)
                 if code != 0:
                     text = " Name or service not known"
-                    await msg.edit(content=text)
+                    await msg.edit(content=f"""```""" + text + """```""")
             except Exception as e:
                 error = "Error ocurred: " + str(e)
                 error_type = "Error type: " + str((e.__class__.__name__))
